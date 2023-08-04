@@ -22,6 +22,16 @@ jobs:
       with:
         node-version: ${{ env.NODE_VER }}
     - run: npm install -g npm@${{ matrix.npm }}
+
+    - name: Check for Mismatch
+      run: |
+            problems=$(npm ls --all --package-lock-only --json | jq '.problems[]?' -r)
+            if [[ -n "$problems" ]]; then
+              echo "$problems"
+              echo
+              echo "Mismatch between package.json and package-lock.json. Please regenerate package lock file with 'npm install'."
+              exit 1
+            fi
     
     - name: Install dependencies
       run: npm ci
