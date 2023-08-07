@@ -26,24 +26,27 @@ jobs:
           echo "ERROR: Outdated package-lock file. Use NPM9 to install dependencies "
           exit 1
 
-  lockfile-sync:
+  mismatch-check:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node: [18]
 
     steps:
-    - name: Check out the repo
-      uses: actions/checkout@v3
-      
-    - name: Install node
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node }}
-    
-    - name: Install dependencies
-      run: npm install -g npm@${{ matrix.npm }}
+      - name: Check out the repo
+        uses: actions/checkout@v3
 
-    - name: Check sync
-      run: npm ls --all --package-lock-only
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
 
+      - name: Check sync
+        run: |
+          problems=$(npm ls --all --package-lock-only --json | jq '.problems[]?' -r)
+          if [[ -n "$problems" ]]; then
+            echo "$problems"
+            echo
+            echo "Mismatch between package.json and package-lock.json. Please regenerate package lock file with 'npm install'."
+            exit 1
+          fi
